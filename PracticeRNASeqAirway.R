@@ -1,60 +1,47 @@
-# ============================================
 # RNA-seq Analysis of Dexamethasone Treatment
-# Dataset: Airway smooth muscle cells satvik desaiauauuuua
-# ============================================
+# Dataset: Airway smooth muscle cells
 
-# --- 1. Load Libraries ---
+#1. Load libraries
 # These are all the packages we need for the analysis
 library(DESeq2)          # Main differential expression package
 library(airway)          # Example dataset
 library(ggplot2)         # General plotting
 library(pheatmap)        # Heatmap visualization
 library(EnhancedVolcano) # Volcano plot visualization
-library(org.Hs.eg.db)   # Human gene annotation database
+library(org.Hs.eg.db)   # Human gene annotation database, contains ENTREZ IDs
 
-# --- 2. Load Data ---
-# Load the airway dataset - an RNA-seq experiment testing
-# the effect of dexamethasone on airway smooth muscle cells
+#2. Load data
 data("airway")
 
-# --- 3. Set Up DESeq2 Object ---
+# 3. Set Up DESeq2 Object
 # Create a DESeq2 dataset
-# design = ~ cell + dex means:
-# - compare treated vs untreated (dex)
-# - while accounting for different cell lines (cell)
 dds <- DESeqDataSet(airway, design = ~ cell + dex)
 
-# --- 4. Filter Low Count Genes ---
+#4. Filter Low Count Genes
 # Remove genes with 10 or fewer total counts across all samples
 # These genes are too lowly expressed to give reliable results
-# Reduces dataset from 63,677 genes to ~22,008 genes
+# Reduces dataset from 63,677 genes to 22,008 genes
 keep <- rowSums(counts(dds)) > 10
 dds <- dds[keep,]
 
-# --- 5. Run DESeq2 Analysis ---
-# This does three things automatically:
+# 5. Run DESeq2 Analysis
+# Does these 3 things:
 # 1. Normalizes counts so samples are fairly comparable
 # 2. Estimates variability for each gene
 # 3. Tests each gene for significant changes
 dds <- DESeq(dds)
 
-# --- 6. Extract Results ---
+# 6. Extract Results
 # Get results comparing treated vs untreated
-# contrast = c("dex", "trt", "untrt") means:
-# look at the dex column, compare trt against untrt
 results <- results(dds, contrast = c("dex", "trt", "untrt"))
-
-# Quick summary of results
 summary(results)
 
-# How many genes are significant at padj < 0.05?
 sum(results$padj < 0.05, na.rm = TRUE)
 
-# --- 7. Sort Results by Significance ---
-# Order genes from most to least significant
+# 7. Sort Results by Significance
 resultsOrdered <- results[order(results$padj),]
 
-# --- 8. Add Human Readable Gene Names ---
+# 8. Add Human Readable Gene Names (ENSEMBL IDs)
 # Convert ENSG codes to gene symbols using human genome database
 resultsOrdered$symbol <- mapIds(org.Hs.eg.db,
                                 keys = rownames(resultsOrdered),
@@ -65,10 +52,9 @@ resultsOrdered$symbol <- mapIds(org.Hs.eg.db,
 # View top 10 most significant genes
 head(resultsOrdered, 10)
 
-# --- 9. Volcano Plot ---
+# 9. Volcano Plot 
 # Shows all genes plotted by fold change (x) vs significance (y)
-# Red dots = significant AND large fold change (our hits)
-# Top corners = most interesting genes
+# Red dots = significant AND large fold change
 EnhancedVolcano(results,
                 lab = rownames(results),
                 x = 'log2FoldChange',
@@ -77,18 +63,19 @@ EnhancedVolcano(results,
                 pCutoff = 0.05,
                 FCcutoff = 1.0)
 
-# --- 10. Heatmap ---
-# Shows expression patterns of top 20 most significant genes
+# 10. Heatmap
+# Shows expression patterns of top 20 most significant genes, organized by sample
 # Red = higher than average expression
 # Blue = lower than average expression
-# Samples should cluster into treated vs untreated groups
 top20 <- head(order(results$padj, na.last = NA), 20)
 mat <- counts(dds, normalized = TRUE)[top20,]
 pheatmap(mat,
          scale = "row",
          color = colorRampPalette(c("darkblue", "white", "darkred"))(100))
 
-#11. Using datacamp PCA tutorial.
+#11. Using datacamp PCA tutorial, conducts Principal Component Analysis
+#determine main sources of variability in samples, reduces confounding variables
+# confirms that treatment (drug) was main source of variability
 #install corrr package, used for correlation analysis
 install.packages("corrr")
 library(corrr)
@@ -118,9 +105,10 @@ View(counts_table)
 #see the column data for cells and whether they were treated or not
 colData(dds)[, c("cell", "dex")]
 
-#select top 500 variable genes. 
+#select top 500 variable genes
 top_var_genes <- head(order(rowVars(counts(dds, normalized = TRUE)), decreasing = TRUE), 500)
 
+#conduct PCA analysis
 mat_pca <- t(counts(dds, normalized = TRUE)[top_var_genes,])
 
 mat_scaled <- scale(mat_pca)
@@ -128,6 +116,7 @@ mat_scaled <- scale(mat_pca)
 data.pca <- prcomp(mat_scaled)
 summary(data.pca)
 
+#visualize PCA analysis results
 library(factoextra)
 fviz_pca_ind(data.pca,
              col.ind = colData(dds)$dex,
