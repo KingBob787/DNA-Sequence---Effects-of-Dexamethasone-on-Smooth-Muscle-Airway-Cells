@@ -275,3 +275,27 @@ tf_activities <- run_ulm(mat = log_counts_symbols,
                          .mor = "mor",
                          minsize = 4)
 head(tf_activities)
+
+#now we filter for statistically significant TF activities. 
+tf_sig <- tf_activities %>%
+  filter(p_value < 0.05)
+
+treated_samples <- colnames(dds)[dds$dex == "trt"]
+untreated_samples <- colnames(dds)[dds$dex == "untrt"]
+
+BiocManager::install("tidyr")
+library(tidyr)
+#calculate mean activity per TF per treatment group
+tf_summary <- tf_sig %>%
+  mutate(treatment = ifelse(condition %in% treated_samples,
+                            "treated", "untreated")) %>%
+  group_by(source, treatment) %>%
+  summarise(mean_score = mean(score)) %>%
+  pivot_wider(names_from = treatment,
+                      values_from = mean_score) %>%
+  mutate(diff = treated-untreated) %>%
+  arrange(desc(abs(diff)))
+
+head(tf_summary, 20)
+
+
