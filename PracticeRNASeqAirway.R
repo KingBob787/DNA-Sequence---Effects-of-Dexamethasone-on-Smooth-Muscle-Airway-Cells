@@ -206,5 +206,42 @@ dotplot(go_up, showCategory = 20, title = "Upregulated Genes - GO Biological Pro
 dotplot(go_down, showCategory = 20, title = "Downregulated Genes - GO Biological Processes")
 
 
+#14. transcription factor analysis to determine which transcription factors are being regulated by dexamethasone
+BiocManager::install("dorothea")
+BiocManager:: install("viper")
+BiocManager:: install("dplyr")
 
+library(dorothea)
+library(viper)
+library(dplyr)
+
+#normalized counts matrix
+counts_matrix <- counts(dds, normalized = TRUE)
+
+#log transform the counts
+log_counts <- log2(counts_matrix + 1)
+
+#load human dorothea regulons
+data(dorothea_hs, package = "dorothea")
+regulons <- dorothea_hs %>%
+  filter(confidence %in% c("A", "B"))
+#^^Gives us a list of transcription factors relating to genes with high confidence levels
+
+#correct format to be able to run viper
+viper_regulons <- df2regulon(regulons)
+
+
+
+
+
+
+
+
+#how active is each transcription factor in our dataset?
+tf_activities <- viper(eset = log_counts,
+                       regulon = viper_regulons,
+                       nes = TRUE,
+                       method = "none",
+                       minsize = 4,
+                       eset.filter = FALSE)
 
