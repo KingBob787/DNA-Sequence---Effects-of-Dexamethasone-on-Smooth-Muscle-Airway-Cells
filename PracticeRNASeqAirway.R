@@ -229,13 +229,11 @@ regulons <- dorothea_hs %>%
 
 #correct format to be able to run viper
 viper_regulons <- df2regulon(regulons)
-
-
-
-
-
-
-
+viper_regulons <- split(regulons, regulons$tf)
+viper_regulons <- lapply(viper_regulons, function(x){
+  tfmode<- setNames(as.numeric(x$mor), x$target)
+  list(tfmode = tfmode, likelihood = as.numeric(rep(1, length(tfmode))))
+})
 
 #how active is each transcription factor in our dataset?
 tf_activities <- viper(eset = log_counts,
@@ -245,3 +243,35 @@ tf_activities <- viper(eset = log_counts,
                        minsize = 4,
                        eset.filter = FALSE)
 
+class(regulons$mor)
+head(regulons$mor)
+sum(is.na(regulons$mor))
+#Viper/Dorothea incompatible, switching to decoupler
+
+BiocManager::install("decoupleR")
+library(decoupleR)
+
+#convert to gene symbols 
+gene_symbols <- mapIds(org.Hs.eg.db,
+                       keys = rownames(log_counts),
+                       column = "SYMBOL",
+                       keytype = "ENSEMBL",
+                       multiVals = "first")
+#Remove NAs
+keep_genes <- !is.na(gene_symbols)
+log_counts_symbols <- log_counts[keep_genes,]
+rownames(log_counts_symbols) <- gene_symbols[keep_genes]
+
+head(rownames(log_counts_symbols))
+
+regulons_df <- dorothea_hs %>%
+  filter(confidence %in% c("A", "B"))
+
+#finally, do transcription factor analysis using our newly formatted datasets
+tf_activities <- run_ulm(mat = log_counts_symbols,
+                         net = regulons_df,
+                         .source = "tf",
+                         .target = "target",
+                         .mor = "mor",
+                         minsize = 4)
+head(tf_activities)
