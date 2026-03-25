@@ -298,4 +298,27 @@ tf_summary <- tf_sig %>%
 
 head(tf_summary, 20)
 
+ggplot(head(tf_summary, 20), 
+       aes(x = reorder(source, diff), 
+           y = diff,
+           fill = diff > 0)) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = c("blue", "red"),
+                    labels = c("Less active", "More active"),
+                    name = "Direction") +
+  coord_flip() +
+  labs(title = "Top 20 Most Changed Transcription Factors",
+       subtitle = "Dexamethasone treated vs untreated",
+       x = "Transcription Factor",
+       y = "Activity Difference (treated - untreated)") +
+  theme_minimal()
+
+
+
+
+
+
+
+
+
 
