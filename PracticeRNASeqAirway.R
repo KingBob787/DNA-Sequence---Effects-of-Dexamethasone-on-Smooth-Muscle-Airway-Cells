@@ -314,11 +314,19 @@ ggplot(head(tf_summary, 20),
   theme_minimal()
 
 
+#15. TF Heatmap Analysis
 
+library(tidyr)
+library(dplyr)
+install.packages("tibble")
+#extract names of top 20 affected transcription factors
+top20_tf_names <- head(tf_summary$source, 20)
 
-
-
-
-
+tf_heatmap_data <- tf_activities %>%
+  filter(source %in% top20_tf_names) %>%
+  pivot_wider(names_from = condition,
+              values_from = score,
+              id_cols = source) %>%
+  column_to_rownames("source")
 
 
