@@ -135,7 +135,7 @@ colData(dds)[, c("cell", "dex")]
 
 #12. Enrichment analysis
 BiocManager::install("clusterProfiler")
-library("clusterProfiler")
+library(clusterProfiler)
 
 sig_genes <- subset(resultsOrdered, padj < 0.05) # sorts all the statistically significant genes
 
@@ -173,7 +173,7 @@ nrow(upregulated)
 nrow(downregulated)
 
 install.packages("AnnotationDbi")
-library("AnnotationDbi")
+library(AnnotationDbi)
 
 up_entrez <- mapIds(org.Hs.eg.db,
                     keys = rownames(upregulated),
@@ -319,6 +319,7 @@ ggplot(head(tf_summary, 20),
 library(tidyr)
 library(dplyr)
 install.packages("tibble")
+library(tibble)
 #extract names of top 20 affected transcription factors
 top20_tf_names <- head(tf_summary$source, 20)
 
@@ -328,5 +329,5 @@ tf_heatmap_data <- tf_activities %>%
               values_from = score,
               id_cols = source) %>%
   column_to_rownames("source")
-
+  
 
