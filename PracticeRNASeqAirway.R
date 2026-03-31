@@ -323,11 +323,32 @@ library(tibble)
 #extract names of top 20 affected transcription factors
 top20_tf_names <- head(tf_summary$source, 20)
 
+#modify data to be heatmap compatible
 tf_heatmap_data <- tf_activities %>%
   filter(source %in% top20_tf_names) %>%
   pivot_wider(names_from = condition,
               values_from = score,
               id_cols = source) %>%
   column_to_rownames("source")
+
+#transform data into matrix format
+tf_heatmap_matrix <- as.matrix(tf_heatmap_data)  
+
+#categorize and label each sample as either treated or untreated
+#maybe should add this to the earlier gene expression heatmap as well
+sample_annotations <- data.frame(
+  Treatment = ifelse(colnames(tf_heatmap_matrix) %in% treated_samples,
+                     "Treated", "Untreated"),
+  row.names = colnames(tf_heatmap_matrix)
+)
+
+#create actual heatmap  
+pheatmap(tf_heatmap_matrix,
+         annotation_col = sample_annotations,
+         scale = "row",
+         color = colorRampPalette(c("darkblue", "white", "darkred"))(100),
+         main = "Top 20 Transcription Factor Activities")
   
 
+
+  
